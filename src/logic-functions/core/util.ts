@@ -64,17 +64,27 @@ export const normalizeDomain = (value: unknown): string | null => {
 const LINKEDIN_PERSON = /^(?:https?:\/\/)?(?:[a-z]{2,3}\.)?linkedin\.com\/in\/([^/?#]+)/i;
 const LINKEDIN_COMPANY = /^(?:https?:\/\/)?(?:[a-z]{2,3}\.)?linkedin\.com\/company\/([^/?#]+)/i;
 
+// A slug as typed: "%" that is not an escape (/in/50%off) makes decodeURIComponent throw, and one such record must
+// not abort the whole run, so it is kept as it is.
+const decodeSlug = (slug: string): string => {
+  try {
+    return decodeURIComponent(slug);
+  } catch {
+    return slug;
+  }
+};
+
 // Canonical https://www.linkedin.com/in/<slug>/ or null when it is not a profile URL.
 export const normalizeLinkedinPersonUrl = (value: unknown): string | null => {
   const raw = nonEmptyString(value);
   const match = raw ? LINKEDIN_PERSON.exec(raw) : null;
-  return match ? `https://www.linkedin.com/in/${decodeURIComponent(match[1]).toLowerCase()}/` : null;
+  return match ? `https://www.linkedin.com/in/${decodeSlug(match[1]).toLowerCase()}/` : null;
 };
 
 export const normalizeLinkedinCompanyUrl = (value: unknown): string | null => {
   const raw = nonEmptyString(value);
   const match = raw ? LINKEDIN_COMPANY.exec(raw) : null;
-  return match ? `https://www.linkedin.com/company/${decodeURIComponent(match[1]).toLowerCase()}/` : null;
+  return match ? `https://www.linkedin.com/company/${decodeSlug(match[1]).toLowerCase()}/` : null;
 };
 
 export const normalizeEmail = (value: unknown): string | null => {

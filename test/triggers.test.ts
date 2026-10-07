@@ -34,5 +34,7 @@ describe('normalisers', () => {
     expect(normalizeDomain('not a domain')).toBeNull();
     expect(normalizeLinkedinPersonUrl('linkedin.com/in/Satya-Nadella?trk=x')).toBe('https://www.linkedin.com/in/satya-nadella/');
     expect(normalizeLinkedinPersonUrl('https://www.linkedin.com/company/microsoft')).toBeNull();
+    expect(normalizeLinkedinPersonUrl('linkedin.com/in/a%zz')).toBe('https://www.linkedin.com/in/a%zz/');
+    expect(normalizeLinkedinPersonUrl('linkedin.com/in/j%C3%BCrgen')).toBe('https://www.linkedin.com/in/jürgen/');
   });
 });

@@ -313,26 +313,27 @@ export const enrichRecords = async (kind: ObjectKind, recordIds: string[], deps:
       continue;
     }
 
-    // Paid match from here on: whatever happens, never call Generect again for this record in this run.
-    let patch: PatchResult;
-    if (kind === 'company') {
-      const recordDomain = normalizeDomain((record.domainName as { primaryLinkUrl?: unknown } | null)?.primaryLinkUrl);
-      const verdict = checkCompanyDomain(identifier.kind as 'linkedin_url' | 'domain', recordDomain, outcome.data as GenerectCompany);
-      if (!verdict.ok) {
-        const message = `domain mismatch, nothing written: ${verdict.reason}; cost ${money(outcome.amountCharged)}`;
-        await writeStatus(id, statusData(schema, 'MISMATCH', message, hash, nowIso, false));
-        push(id, 'MISMATCH', message, { amountCharged: outcome.amountCharged });
-        continue;
-      }
-      patch = buildCompanyPatch(record, outcome.data as GenerectCompany, schema);
-    } else {
-      patch = buildPersonPatch(record, outcome.data as GenerectLead, schema);
-    }
-    // Hash of the identifier AFTER our write (e.g. an email lookup that fills the LinkedIn URL), so the
-    // person.updated / company.updated event our own write causes is recognised as "unchanged".
-    const postHash = identifierHash(kind, pickIdentifier(kind, { ...record, ...patch.patch })) ?? hash;
-    const message = `matched by ${via}: ${describePatch(patch, outcome.amountCharged)}`;
+    // Paid match from here on: whatever happens, never call Generect again for this record in this run, and record
+    // WRITE_FAILED with the input hash on any failure, so a later click does not pay for the same lookup again.
+    let patch: PatchResult | undefined;
     try {
+      if (kind === 'company') {
+        const recordDomain = normalizeDomain((record.domainName as { primaryLinkUrl?: unknown } | null)?.primaryLinkUrl);
+        const verdict = checkCompanyDomain(identifier.kind as 'linkedin_url' | 'domain', recordDomain, outcome.data as GenerectCompany);
+        if (!verdict.ok) {
+          const message = `domain mismatch, nothing written: ${verdict.reason}; cost ${money(outcome.amountCharged)}`;
+          await writeStatus(id, statusData(schema, 'MISMATCH', message, hash, nowIso, false));
+          push(id, 'MISMATCH', message, { amountCharged: outcome.amountCharged });
+          continue;
+        }
+        patch = buildCompanyPatch(record, outcome.data as GenerectCompany, schema);
+      } else {
+        patch = buildPersonPatch(record, outcome.data as GenerectLead, schema);
+      }
+      // Hash of the identifier AFTER our write (e.g. an email lookup that fills the LinkedIn URL), so the
+      // person.updated / company.updated event our own write causes is recognised as "unchanged".
+      const postHash = identifierHash(kind, pickIdentifier(kind, { ...record, ...patch.patch })) ?? hash;
+      const message = `matched by ${via}: ${describePatch(patch, outcome.amountCharged)}`;
       await write(id, { ...patch.patch, ...statusData(schema, 'MATCHED', message, postHash, nowIso, true) });
       push(id, 'MATCHED', message, {
         amountCharged: outcome.amountCharged,
@@ -341,7 +342,7 @@ export const enrichRecords = async (kind: ObjectKind, recordIds: string[], deps:
         missing: patch.missing,
       });
     } catch (error) {
-      const failMessage = `paid match (${money(outcome.amountCharged)}) but the CRM write failed: ${String(
+      const failMessage = `paid match (${money(outcome.amountCharged)}) but saving it to the CRM failed: ${String(
         (error as Error)?.message ?? error,
       )}; not retried automatically`;
       try {
@@ -349,7 +350,7 @@ export const enrichRecords = async (kind: ObjectKind, recordIds: string[], deps:
       } catch {
         // the status write can fail for the same reason; the run result still reports it
       }
-      push(id, 'WRITE_FAILED', failMessage, { amountCharged: outcome.amountCharged, missing: patch.missing });
+      push(id, 'WRITE_FAILED', failMessage, { amountCharged: outcome.amountCharged, missing: patch?.missing ?? [] });
     }
   }
 

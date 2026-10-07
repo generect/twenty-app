@@ -112,6 +112,27 @@ describe('enrichRecords', () => {
     expect(updates[0].data.generectStatus).toBe('WRITE_FAILED');
   });
 
+  it('a LinkedIn URL with a stray % does not abort the run for the other records (pre-PR review, 07.10)', async () => {
+    const { api } = fakeApi([person('odd', { linkedinLink: { primaryLinkUrl: 'https://www.linkedin.com/in/50%off' } }), person('ok')]);
+    const noMatch: GenerectOutcome<Record<string, unknown>> = { kind: 'no_match', amountCharged: 0, endpoint: '/enrich/database/lead/', detail: 'not found', attempts: 1 };
+    const g = fakeGenerect([noMatch, match(LEAD)]);
+    const run = await enrichRecords('person', ['odd', 'ok'], deps(api, g.client));
+    expect(run.results.map((r) => r.outcome)).toEqual(['NO_MATCH', 'MATCHED']);
+    expect(g.enrichLead.mock.calls[0]).toEqual([{ linkedin_url: 'https://www.linkedin.com/in/50%off/' }]);
+  });
+
+  it('anything failing after a paid match records WRITE_FAILED with the input hash (no second payment)', async () => {
+    const { api, updates } = fakeApi([person('p')]);
+    const exploding = new Proxy({}, { get: () => { throw new Error('unexpected payload'); } }) as Record<string, unknown>;
+    const g = fakeGenerect([match(exploding)]);
+    const run = await enrichRecords('person', ['p'], deps(api, g.client));
+    expect(run.results[0].outcome).toBe('WRITE_FAILED');
+    expect(run.results[0].message).toContain('unexpected payload');
+    const status = updates.find((u) => u.id === 'p')?.data;
+    expect(status?.generectStatus).toBe('WRITE_FAILED');
+    expect(status?.generectInputHash).toBeTruthy();
+  });
+
   it('automatic mode never retries a WRITE_FAILED record with the same input', async () => {
     const rec = person('w');
     const hash = identifierHash('person', pickPersonIdentifier(rec));
