@@ -32,7 +32,7 @@ import {
   normalizeLinkedinCompanyUrl,
   normalizeLinkedinPersonUrl,
   readBooleanVariable,
-  readNumberVariable,
+  readSpendCap,
   readVariable,
   truncate,
 } from 'src/logic-functions/core/util';
@@ -377,7 +377,7 @@ export type RunConfig = {
 export const readConfig = (env: Record<string, string | undefined> = process.env): RunConfig => ({
   apiKey: readVariable(env.GENERECT_API_KEY),
   realtimeLinkedin: readBooleanVariable(env.REALTIME_LINKEDIN_LOOKUPS, false),
-  maxSpendUsd: readNumberVariable(env.MAX_SPEND_PER_RUN_USD, 5),
+  maxSpendUsd: readSpendCap(env.MAX_SPEND_PER_RUN_USD, 5),
 });
 
 // Entry point of the command and the workflow step.

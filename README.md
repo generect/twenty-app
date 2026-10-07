@@ -77,9 +77,9 @@ On Twenty Cloud each run of the app's functions also uses a little of your works
 | Setting | Default | What it does |
 |---|---|---|
 | Live LinkedIn lookups | Off | LinkedIn lookups fetch live data ($0.04 instead of $0.02) |
-| Spend cap per run, USD | 5 | One click or one workflow run stops before spending more |
+| Spend cap per run, USD | 5 | One click or one workflow run stops before spending more; 0 = no paid lookups |
 
-**Self-hosted Twenty** (2.42 or later) must allow logic functions: set `LOGIC_FUNCTION_TYPE=LOCAL` (or `LAMBDA`) for the server and the worker. Otherwise the app installs but its command fails with "Logic function execution is disabled".
+**Self-hosted Twenty** (2.45 or later) must allow logic functions: set `LOGIC_FUNCTION_TYPE=LOCAL` (or `LAMBDA`) for the server and the worker. Otherwise the app installs but its command fails with "Logic function execution is disabled".
 
 ## Automate it
 

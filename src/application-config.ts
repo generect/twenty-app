@@ -43,7 +43,7 @@ export default defineApplication({
     MAX_SPEND_PER_RUN_USD: {
       universalIdentifier: APP_VARIABLE_IDS.MAX_SPEND_PER_RUN_USD,
       label: 'Spend cap per run, USD',
-      description: 'One click or one workflow run stops before spending more than this. Default 5.',
+      description: 'One click or one workflow run stops before spending more than this. Default 5; 0 = no paid lookups.',
       type: FieldType.NUMBER,
       value: 5,
     },

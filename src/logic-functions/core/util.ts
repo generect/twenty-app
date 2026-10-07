@@ -108,3 +108,13 @@ export const readNumberVariable = (value: string | undefined, fallback: number):
   const v = Number(readVariable(value));
   return Number.isFinite(v) && v > 0 ? v : fallback;
 };
+
+// The spend cap: unset or unreadable = the default, 0 (or less) = no paid lookups at all. Only an empty value
+// falls back: a workspace that types 0 to stop spending must not get the $5 default.
+export const readSpendCap = (value: string | undefined, fallback: number): number => {
+  const raw = readVariable(value);
+  if (raw === null) return fallback;
+  const v = Number(raw);
+  if (!Number.isFinite(v)) return fallback;
+  return Math.max(v, 0);
+};

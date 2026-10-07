@@ -171,6 +171,15 @@ describe('enrichRecords', () => {
     expect(g.enrichLead).toHaveBeenCalledTimes(1);
   });
 
+  it('a cap of 0 makes no paid lookup at all', async () => {
+    const { api } = fakeApi([person('a'), person('b')]);
+    const g = fakeGenerect([match(LEAD), match(LEAD)]);
+    const run = await enrichRecords('person', ['a', 'b'], deps(api, g.client, { maxSpendUsd: 0 }));
+    expect(run.results.map((r) => r.outcome)).toEqual(['SKIPPED_RUN_STOPPED', 'SKIPPED_RUN_STOPPED']);
+    expect(g.enrichLead).not.toHaveBeenCalled();
+    expect(run.spentUsd).toBe(0);
+  });
+
   it('automatic mode skips Attio-mirrored records', async () => {
     const { api } = fakeApi([person('m', { attioRecordId: 'rec_123' })]);
     const g = fakeGenerect([match(LEAD)]);
@@ -217,6 +226,12 @@ describe('readConfig', () => {
   it('tolerates JSON-encoded variable values', () => {
     const c = readConfig({ GENERECT_API_KEY: ' k ', REALTIME_LINKEDIN_LOOKUPS: '"true"', MAX_SPEND_PER_RUN_USD: '1.5' });
     expect(c).toEqual({ apiKey: 'k', realtimeLinkedin: true, maxSpendUsd: 1.5 });
+  });
+  it('a spend cap of 0 means no paid lookups, not the $5 default (pre-PR review, 07.10)', () => {
+    expect(readConfig({ MAX_SPEND_PER_RUN_USD: '0' }).maxSpendUsd).toBe(0);
+    expect(readConfig({ MAX_SPEND_PER_RUN_USD: '-3' }).maxSpendUsd).toBe(0);
+    expect(readConfig({ MAX_SPEND_PER_RUN_USD: '' }).maxSpendUsd).toBe(5);
+    expect(readConfig({ MAX_SPEND_PER_RUN_USD: 'abc' }).maxSpendUsd).toBe(5);
   });
   it('ignores the retired automatic-mode variables of 0.1.x', () => {
     expect(readConfig({ GENERECT_API_KEY: 'k', AUTO_ENRICH_MODE: 'CREATED' })).toEqual({ apiKey: 'k', realtimeLinkedin: false, maxSpendUsd: 5 });
