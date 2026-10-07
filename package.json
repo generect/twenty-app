@@ -1,0 +1,52 @@
+{
+  "name": "@generect/generect",
+  "version": "1.0.0",
+  "description": "Generect for Twenty CRM: enrich People and Companies with Generect B2B data (LinkedIn, job title, location, industry, headcount). Fills empty fields only.",
+  "license": "MIT",
+  "author": "Generect <support@generect.com>",
+  "homepage": "https://github.com/generect/twenty-app#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/generect/twenty-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/generect/twenty-app/issues",
+    "email": "support@generect.com"
+  },
+  "keywords": [
+    "twenty-app",
+    "twenty",
+    "crm",
+    "enrichment",
+    "generect",
+    "b2b-data",
+    "linkedin"
+  ],
+  "engines": {
+    "node": "^24.5.0",
+    "npm": "please-use-yarn",
+    "yarn": ">=4.0.2",
+    "twenty": ">=2.42.0"
+  },
+  "packageManager": "yarn@4.13.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "twenty": "twenty",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "twenty dev:build --tarball"
+  },
+  "devDependencies": {
+    "@types/node": "^24.7.2",
+    "@types/react": "^19.2.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "twenty-client-sdk": "2.45.0",
+    "twenty-sdk": "2.45.0",
+    "typescript": "^5.9.3",
+    "vite-tsconfig-paths": "^4.2.1",
+    "vitest": "^4.0.0"
+  }
+}
