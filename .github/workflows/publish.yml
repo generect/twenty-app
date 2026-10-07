@@ -1,0 +1,54 @@
+# Publishes the app to npm with provenance. Provenance is how Generect claims the app in a Twenty marketplace:
+# the claim verifies that the GitHub organization the provenance points to (generect) is ours.
+#
+# First release (the package does not exist on npm yet, so no trusted publisher can be set up):
+#   1. Add a repository secret NPM_TOKEN: an npm automation token with write access to the @generect scope.
+#   2. Bump "version" in package.json, tag the commit v<version> and push the tag (or run this workflow by hand).
+# After the first release:
+#   3. npmjs.com > @generect/generect > Settings > Trusted Publisher: register this repository and publish.yml.
+#   4. Delete the NPM_TOKEN secret: later releases authenticate with OIDC only.
+# npm accepts provenance only from a PUBLIC repository on a GitHub-hosted runner.
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # Required for provenance (OIDC) and for npm trusted publishing.
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Update npm
+        # Trusted publishing requires npm 11.5.1 or later.
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Test
+        run: yarn typecheck && yarn test
+
+      - name: Publish to npm
+        # In CI `twenty app:publish` adds --provenance and --access public by itself.
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: yarn twenty app:publish
